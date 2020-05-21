@@ -1,11 +1,9 @@
 package cn.alanhe;
 
+import com.intellij.ide.projectView.ProjectView;
+import com.intellij.ide.projectView.impl.ProjectViewPane;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.event.EditorEventMulticaster;
-import com.intellij.openapi.editor.event.SelectionEvent;
-import com.intellij.openapi.editor.event.SelectionListener;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.StatusBar;
@@ -36,7 +34,7 @@ public class SelectionHelperComponent implements ProjectComponent {
     }
 
     private static class MyEditorBasedWidget extends EditorBasedWidget
-            implements StatusBarWidget.Multiframe, StatusBarWidget.TextPresentation, SelectionListener {
+            implements StatusBarWidget.Multiframe, StatusBarWidget.TextPresentation {
 
         protected MyEditorBasedWidget(@NotNull Project project) {
             super(project);
@@ -62,16 +60,13 @@ public class SelectionHelperComponent implements ProjectComponent {
         @Override
         public void install(@NotNull StatusBar bar) {
             super.install(bar);
-            EditorEventMulticaster eventMulticaster = EditorFactory.getInstance().getEventMulticaster();
-            eventMulticaster.addSelectionListener(this, this);
+            ProjectView.getInstance(this.myProject)
+                    .getProjectViewPaneById(ProjectViewPane.ID)
+                    .getTree()
+                    .addTreeSelectionListener(new MyTreeSelectionListener());
         }
 
         private String statusBarText = "";
-
-        @Override
-        public void selectionChanged(SelectionEvent event) {
-            update(event.getEditor());
-        }
 
         @NotNull
         @Override
@@ -111,8 +106,6 @@ public class SelectionHelperComponent implements ProjectComponent {
             if (editor.isDisposed()) {
                 return;
             }
-            // final VirtualFile[] files = e.getRequiredData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-            statusBarText = String.valueOf(Math.random());
 
             myStatusBar.updateWidget(ID());
         }
